@@ -4,10 +4,12 @@ import os
 import sys
 sys.path.append('../')
 
+import time
+
 import simplejson
 from glob import glob
 
-from pywhois.parser import WhoisEntry
+from pywhois.parser import WhoisEntry, cast_date
 
 class TestParser(unittest.TestCase):
     def test_com_expiration(self):
@@ -23,8 +25,21 @@ class TestParser(unittest.TestCase):
         expires = w.get('expiration_date')
         self.assertEquals(expires, ['14-apr-2009'])
 
+    def test_cast_date(self):
+        dates = ['14-apr-2008', '2008-04-14']
+        for d in dates:
+            r = time.strftime('%Y-%m-%d', cast_date(d))
+            self.assertEquals(r, '2008-04-14')
+
     def test_com_allsamples(self):
-        keys_to_test = ['expiration_date']
+        """
+        Iterate over all of the sample/whois/*.com files, read the data,
+        parse it, and compare to the expected values in sample/expected/.
+        Only keys defined in keys_to_test will be tested.
+        
+        To generate fresh expected value dumps, see NOTE below.
+        """
+        keys_to_test = ['domain_name', 'expiration_date', 'updated_date', 'creation_date', 'status']
         fail = 0
         for path in glob('test/samples/whois/*.com'):
             # Parse whois data
@@ -41,13 +56,21 @@ class TestParser(unittest.TestCase):
             expected_fp = open(os.path.join('test/samples/expected/', domain))
             expected_results = simplejson.load(expected_fp)
             
+            # NOTE: Toggle condition below to write expected results from the parse results
+            # This will overwrite the existing expected results. Only do this if you've manually
+            # confirmed that the parser is generating correct values at its current state.
+            if False:
+                expected_fp = open(os.path.join('test/samples/expected/', domain), 'w')
+                expected_results = simplejson.dump(results, expected_fp)
+                continue
+            
             # Compare each key
             for key in results:
                 result = results.get(key)
                 expected = expected_results.get(key)
                 if expected != result:
-                    print "%s \t %s != %s" % (domain, result, expected)
+                    print "%s \t(%s):\t %s != %s" % (domain, key, result, expected)
                     fail += 1
             
         if fail:
-            self.fail("%d sample whois files were not parsed properly!" % fail)
+            self.fail("%d sample whois attributes were not parsed properly!" % fail)
