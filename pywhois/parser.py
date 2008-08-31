@@ -11,7 +11,7 @@ import time
 
 
 def cast_date(date_str):
-    "Convert any date string found in WHOIS to a Date object."
+    "Convert any date string found in WHOIS to a time object."
     known_formats = [
         '%d-%b-%Y', # 02-jan-2000
         '%Y-%m-%d', # 2000-01-02
