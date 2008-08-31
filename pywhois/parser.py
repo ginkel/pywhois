@@ -6,6 +6,8 @@
 
 import re
 
+import exceptions
+
 # TODO: Add a global-ish method which will automatically determine which
 # whois type to use and return an instance of it.
 
@@ -26,28 +28,47 @@ class WhoisEntry(object):
     _parsing_re = {}
 
     @staticmethod
-    def load(self, text):
+    def load(domain, text):
         """
         Given whois output in ``text``, return an instance of ``WhoisEntry`` that represents its parsed contents.
         """
-        pass
+        if '/' in domain:
+            raise ValueError("'%s' is not a domain." % domain)
+        if '.com' in domain:
+            return Whois_Com(domain, text)
+        else:
+            raise exceptions.UnknownTLD(domain)
 
 
-class WhoisDotCom(WhoisEntry):
+class Whois_Com(WhoisEntry):
     "Whois parser for .com domains"
     _parsing_re = {
             # NOTE: These should all be found following the domain_name match.
-            'domain_name':  'Domain Name:\s?(.+)$',
-            'registrar':    'Registrar:\s?(.+)$',
-            'whois_server': 'Whois Server:\s?(.+)$',
-            'referral_url': 'Referral URL:\s?(.+)$',
-            'updated_date': 'Updated Date:\s?(.+)$',
-            'creation_date':   'Creation Date:\s?(.+)$',
-            'expiration_date': 'Expiration Date:\s?(.+)$',
-            'name_servers': 'Domain Name:\s?(.+)$', # There can be many of these
-            'status': 'Status:\s?(.+)$', # There can be many of these
+            'domain_name':  'Domain Name:\s?(.+)',
+            'registrar':    'Registrar:\s?(.+)',
+            'whois_server': 'Whois Server:\s?(.+)',
+            'referral_url': 'Referral URL:\s?(.+)',
+            'updated_date': 'Updated Date:\s?(.+)',
+            'creation_date':   'Creation Date:\s?(.+)',
+            'expiration_date': 'Expiration Date:\s?(.+)',
+            'name_servers': 'Domain Name:\s?(.+)', # There can be many of these
+            'status': 'Status:\s?(.+)', # There can be many of these
         }
 
-    # Compile the regular expressions
+    # Compile the regular expressions (this occurs on import)
     for key in _parsing_re:
         _parsing_re[key] = re.compile(_parsing_re[key])
+
+    def __init__(self, domain, text):
+        self.domain = domain
+        self.text = text
+    
+    def get(self, attribute):
+        """
+        Given an attribute, return all matches in the Whois text.
+        """
+        re_attr = self._parsing_re.get(attribute)
+        if not re_attr:
+            raise KeyError("Unknown attribute: %s" % attribute)
+        
+        return re_attr.findall(self.text)
