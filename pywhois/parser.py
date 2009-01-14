@@ -9,14 +9,13 @@ import exceptions
 
 import time
 
-
 def cast_date(date_str):
     "Convert any date string found in WHOIS to a time object."
     known_formats = [
         '%d-%b-%Y', # 02-jan-2000
         '%Y-%m-%d', # 2000-01-02
     ]
-    
+
     r = None
     for fmt in known_formats:
         try:
@@ -77,7 +76,7 @@ class Whois_Com(WhoisEntry):
     def __init__(self, domain, text):
         self.domain = domain
         self.text = text
-    
+
     def get(self, attribute):
         """
         Given an attribute, return all matches in the Whois text.
@@ -85,5 +84,5 @@ class Whois_Com(WhoisEntry):
         re_attr = self._whois_re.get(attribute)
         if not re_attr:
             raise KeyError("Unknown attribute: %s" % attribute)
-        
+
         return re_attr.findall(self.text)
