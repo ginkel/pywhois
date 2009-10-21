@@ -1,5 +1,2 @@
-class PywhoisException(Exception):
-    pass
-
-class UnknownTLD(PywhoisException):
+class PywhoisError(Exception):
     pass

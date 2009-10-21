@@ -5,12 +5,14 @@
 # the MIT license: http://www.opensource.org/licenses/mit-license.php
 
 import re
-import exceptions
+from exceptions import PywhoisError
+
 
 import time
 
 def cast_date(date_str):
-    "Convert any date string found in WHOIS to a time object."
+    """Convert any date string found in WHOIS to a time object.
+    """
     known_formats = [
         '%d-%b-%Y', # 02-jan-2000
         '%Y-%m-%d', # 2000-01-02
@@ -25,64 +27,90 @@ def cast_date(date_str):
 
     return r
 
+
 class WhoisEntry(object):
+    """Base class for parsing a Whois entries.
+    Child classes will implement special features of each registrar.
     """
-    Parent class for parsing a Whois entries. Whois entries of different types
-    will implement the interface provided by this class.
-    """
-    _attributes = ['domain_name',
-                   'registrar',
-                   'whois_server',
-                   'referral_url', # http url of whois_server
-                   'name_servers', # list of name servers
-                   'status',       # list of statuses
-                   'updated_date',
-                   'creation_date',
-                   'expiration_date']
-    _parsing_re = {}
-
-    @staticmethod
-    def load(domain, text):
-        """
-        Given whois output in ``text``, return an instance of ``WhoisEntry`` that represents its parsed contents.
-        """
-        if '/' in domain:
-            raise ValueError("'%s' is not a domain." % domain)
-        if '.com' in domain:
-            return Whois_Com(domain, text)
-        else:
-            raise exceptions.UnknownTLD(domain)
-
-
-class Whois_Com(WhoisEntry):
-    "Whois parser for .com domains"
-    _whois_re = {
-            # NOTE: These should all be found following the domain_name match.
-            'domain_name':      'Domain Name:\s?(.+)',
-            'registrar':        'Registrar:\s?(.+)',
-            'whois_server':     'Whois Server:\s?(.+)',
-            'referral_url':     'Referral URL:\s?(.+)',
-            'updated_date':     'Updated Date:\s?(.+)',
-            'creation_date':    'Creation Date:\s?(.+)',
-            'expiration_date':  'Expiration Date:\s?(.+)',
-            'name_servers':     'Domain Name:\s?(.+)', # There can be many of these
-            'status':           'Status:\s?(.+)', # There can be many of these
-        }
-
-    # Compile the regular expressions (this occurs on import)
-    for key in _whois_re:
-        _whois_re[key] = re.compile(_whois_re[key])
+    _whois_regs = {
+        # NOTE: These should all be found following the domain_name match.
+        'domain_name':      'Domain Name:\s?(.+)',
+        'registrar':        'Registrar:\s?(.+)',
+        'whois_server':     'Whois Server:\s?(.+)',
+        'referral_url':     'Referral URL:\s?(.+)', # http url of whois_server
+        'updated_date':     'Updated Date:\s?(.+)',
+        'creation_date':    'Creation Date:\s?(.+)',
+        'expiration_date':  'Expiration Date:\s?(.+)',
+        'name_servers':     'Domain Name:\s?(.+)', # list of name servers
+        'status':           'Status:\s?(.+)', # list of statuses
+        'emails':           '\S+@\S+\.\S+', # list of email addresses
+    }
 
     def __init__(self, domain, text):
         self.domain = domain
         self.text = text
 
-    def get(self, attribute):
-        """
-        Given an attribute, return all matches in the Whois text.
-        """
-        re_attr = self._whois_re.get(attribute)
-        if not re_attr:
-            raise KeyError("Unknown attribute: %s" % attribute)
 
-        return re_attr.findall(self.text)
+    def __getattr__(self, attr):
+        """The first time an attribute is called it will be calculated here.
+        The attribute is then set to be accessed directly by subsequent calls.
+        """
+        whois_reg = self._whois_regs.get(attr)
+        if whois_reg:
+            setattr(self, attr, re.findall(whois_reg, self.text))
+            return getattr(self, attr)
+        else:
+            raise KeyError("Unknown attribute: %s" % attr)
+
+    def __str__(self):
+        """Print all whois properties of domain
+        """
+        return '\n'.join('%s: %s' % (attr, str(getattr(self, attr))) for attr in self._whois_regs)
+
+
+    @staticmethod
+    def load(domain, text):
+        """Given whois output in ``text``, return an instance of ``WhoisEntry`` that represents its parsed contents.
+        """
+        if text.strip() == 'No whois server is known for this kind of object.':
+            # invalid url
+            raise PywhoisError(text)
+
+        if '.com' in domain:
+            return WhoisCom(domain, text)
+        elif '.net' in domain:
+            return WhoisNet(domain, text)
+        elif '.org' in domain:
+            return WhoisOrg(domain, text)
+        else:
+            return WhoisEntry(domain, text)
+
+
+
+class WhoisCom(WhoisEntry):
+    """Whois parser for .com domains
+    """
+    def __init__(self, domain, text):
+        if 'No match for "' in text:
+            raise PywhoisError("'%s' not found" % domain)
+        else:
+            WhoisEntry.__init__(self, domain, text) 
+
+class WhoisNet(WhoisEntry):
+    """Whois parser for .net domains
+    """
+    def __init__(self, domain, text):
+        if 'No match for "' in text:
+            raise PywhoisError("'%s' not found" % domain)
+        else:
+            WhoisEntry.__init__(self, domain, text) 
+
+class WhoisOrg(WhoisEntry):
+    """Whois parser for .org domains
+    """
+    def __init__(self, domain, text):
+        if text.strip() == 'NOT FOUND':
+            raise PywhoisError("'%s' not found" % domain)
+        else:
+            WhoisEntry.__init__(self, domain, text) 
+
