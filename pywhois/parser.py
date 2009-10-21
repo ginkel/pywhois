@@ -33,7 +33,6 @@ class WhoisEntry(object):
     Child classes will implement special features of each registrar.
     """
     _whois_regs = {
-        # NOTE: These should all be found following the domain_name match.
         'domain_name':      'Domain Name:\s?(.+)',
         'registrar':        'Registrar:\s?(.+)',
         'whois_server':     'Whois Server:\s?(.+)',
@@ -43,7 +42,7 @@ class WhoisEntry(object):
         'expiration_date':  'Expiration Date:\s?(.+)',
         'name_servers':     'Domain Name:\s?(.+)', # list of name servers
         'status':           'Status:\s?(.+)', # list of statuses
-        'emails':           '\S+@\S+\.\S+', # list of email addresses
+        'emails':           '[\w.-]+@[\w.-]+\.[\w]{2,4}', # list of email addresses
     }
 
     def __init__(self, domain, text):
@@ -73,7 +72,6 @@ class WhoisEntry(object):
         """Given whois output in ``text``, return an instance of ``WhoisEntry`` that represents its parsed contents.
         """
         if text.strip() == 'No whois server is known for this kind of object.':
-            # invalid url
             raise PywhoisError(text)
 
         if '.com' in domain:
@@ -92,7 +90,7 @@ class WhoisCom(WhoisEntry):
     """
     def __init__(self, domain, text):
         if 'No match for "' in text:
-            raise PywhoisError("'%s' not found" % domain)
+            raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text) 
 
@@ -101,7 +99,7 @@ class WhoisNet(WhoisEntry):
     """
     def __init__(self, domain, text):
         if 'No match for "' in text:
-            raise PywhoisError("'%s' not found" % domain)
+            raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text) 
 
@@ -110,7 +108,7 @@ class WhoisOrg(WhoisEntry):
     """
     def __init__(self, domain, text):
         if text.strip() == 'NOT FOUND':
-            raise PywhoisError("'%s' not found" % domain)
+            raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text) 
 
