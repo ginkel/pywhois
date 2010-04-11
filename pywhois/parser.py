@@ -42,7 +42,7 @@ class WhoisEntry(object):
         'updated_date':     'Updated Date:\s?(.+)',
         'creation_date':    'Creation Date:\s?(.+)',
         'expiration_date':  'Expiration Date:\s?(.+)',
-        'name_servers':     'Domain Name:\s?(.+)', # list of name servers
+        'name_servers':     'Name Server:\s?(.+)', # list of name servers
         'status':           'Status:\s?(.+)', # list of statuses
         'emails':           '[\w.-]+@[\w.-]+\.[\w]{2,4}', # list of email addresses
     }
