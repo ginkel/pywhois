@@ -5,10 +5,12 @@
 # the MIT license: http://www.opensource.org/licenses/mit-license.php
 
 import re
-from exceptions import PywhoisError
-
-
 import time
+
+
+class PywhoisError(Exception):
+    pass
+
 
 def cast_date(date_str):
     """Convert any date string found in WHOIS to a time object.
@@ -80,6 +82,8 @@ class WhoisEntry(object):
             return WhoisNet(domain, text)
         elif '.org' in domain:
             return WhoisOrg(domain, text)
+        elif '.ru' in domain:
+            return WhoisRu(domain, text)
         else:
             return WhoisEntry(domain, text)
 
@@ -112,3 +116,21 @@ class WhoisOrg(WhoisEntry):
         else:
             WhoisEntry.__init__(self, domain, text) 
 
+class WhoisRu(WhoisEntry):
+    """Whois parser for .ru domains
+    """
+    _whois_regs = {
+        'domain_name': 'domain:\s*(.+)',
+        'registrar': 'registrar:\s*(.+)',
+        'creation_date': 'created:\s*(.+)',
+        'expiration_date': 'paid-till:\s*(.+)',
+        'name_servers': 'nserver:\s*(.+)',  # list of name servers
+        'status': 'state:\s*(.+)',  # list of statuses
+        'emails': '[\w.-]+@[\w.-]+\.[\w]{2,4}',  # list of email addresses
+    }
+
+    def __init__(self, domain, text):
+        if text.strip() == 'No entries found':
+            raise PywhoisError(text)
+        else:
+            WhoisEntry.__init__(self, domain, text)

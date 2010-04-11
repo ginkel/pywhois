@@ -1,2 +1,0 @@
-class PywhoisError(Exception):
-    pass
