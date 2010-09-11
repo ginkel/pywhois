@@ -6,9 +6,8 @@
 
 import re
 import time
-def test():
-    print 'test1'
-    
+   
+
 class PywhoisError(Exception):
     pass
 
@@ -24,9 +23,9 @@ def cast_date(date_str):
         '%Y-%m-%dT%H:%M:%SZ',       # 2007-01-26T19:10:31Z
     ]
 
-    for fmt in known_formats:
+    for format in known_formats:
         try:
-            return time.strptime(date_str.strip(), fmt)
+            return time.strptime(date_str.strip(), format)
         except ValueError, e:
             pass # Wrong format, keep trying
     return None
