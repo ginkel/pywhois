@@ -10,7 +10,6 @@ def whois(url):
     # call whois command with domain
     r = subprocess.Popen(['whois', domain], stdout=subprocess.PIPE)
     text = r.stdout.read()
-    print domain
     return WhoisEntry.load(domain, text)
 
 
