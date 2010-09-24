@@ -1,17 +1,16 @@
 import re
 import sys
-import subprocess
 from parser import WhoisEntry
+from whois import NICClient
 
 
 def whois(url):
     # clean domain to expose netloc
     domain = extract_domain(url)
     # call whois command with domain
-    r = subprocess.Popen(['whois', domain], stdout=subprocess.PIPE)
-    text = r.stdout.read()
+    nic_client = NICClient()
+    text = nic_client.whois_lookup(None, domain, 0)
     return WhoisEntry.load(domain, text)
-
 
 def extract_domain(url):
     """Extract the domain from the given URL
