@@ -102,6 +102,8 @@ class WhoisEntry(object):
         	return WhoisMe(domain, text)
         elif '.uk' in domain:
         	return WhoisUk(domain, text)
+        elif '.de' in domain:
+                return WhoisDe(domain, text)
         else:
             return WhoisEntry(domain, text)
 
@@ -340,6 +342,19 @@ class WhoisUk(WhoisEntry):
 	}
     def __init__(self, domain, text):
         if 'Not found:' in text:
+            raise PywhoisError(text)
+        else:
+            WhoisEntry.__init__(self, domain, text, self.regex)
+
+class WhoisDe(WhoisEntry):
+    """Whois parser for .de domains
+    """
+    regex = {
+        'domain_name':                    'Domain:\s*(.+)',                                              
+        'status':                         'Status:\s*(.+)',                                              
+        }
+    def __init__(self, domain, text):
+        if 'Status: free' in text:
             raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text, self.regex)
