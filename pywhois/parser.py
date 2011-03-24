@@ -106,6 +106,8 @@ class WhoisEntry(object):
                 return WhoisDe(domain, text)
         elif '.io' in domain:
                 return WhoisIo(domain, text)
+        elif '.se' in domain:
+                return WhoisSe(domain, text)
         else:
             return WhoisEntry(domain, text)
 
@@ -370,6 +372,23 @@ class WhoisIo(WhoisEntry):
         }
     def __init__(self, domain, text):
         if 'Available' in text and not 'Not available' in text:
+            raise PywhoisError(text)
+        else:
+            WhoisEntry.__init__(self, domain, text, self.regex)
+
+class WhoisSe(WhoisEntry):
+    """Whois parser for .se domains
+    """
+    regex = {
+        'domain_name':     'domain:\s*(.+)',
+        'status':          'status:\s*(.+)',
+        'name_servers':    'nserver:\s*(.+)',
+        'creation_date':   'created:\s*(.+)',
+        'expiration_date': 'expires:\s*(.+)',
+        'updated_date':    'modified:\s*(.+)',
+        }
+    def __init__(self, domain, text):
+        if 'not found' in text:
             raise PywhoisError(text)
         else:
             WhoisEntry.__init__(self, domain, text, self.regex)
