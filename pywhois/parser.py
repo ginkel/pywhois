@@ -51,7 +51,7 @@ class WhoisEntry(object):
 
     def __init__(self, domain, text, regex=None):
         self.domain = domain
-        self.text = text
+        self.text = text.replace('\r', '')
         if regex is not None:
             self._regex = regex
 
