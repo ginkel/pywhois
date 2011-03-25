@@ -49,9 +49,11 @@ class WhoisEntry(object):
         'emails':           '[\w.-]+@[\w.-]+\.[\w]{2,4}', # list of email addresses
     }
 
-    def __init__(self, domain, text, regex=None):
+    def __init__(self, domain, text, regex=None, start_marker=None, end_marker=None):
         self.domain = domain
         self.text = text.replace('\r', '')
+        self._start_marker = start_marker
+        self._end_marker = end_marker
         if regex is not None:
             self._regex = regex
 
@@ -62,7 +64,18 @@ class WhoisEntry(object):
         """
         whois_regex = self._regex.get(attr)
         if whois_regex:
-            setattr(self, attr, re.findall(whois_regex, self.text))
+            value = None
+            if not self._start_marker is None:
+                start = re.search(self._start_marker, self.text, re.MULTILINE)
+                if not self._end_marker is None and not start is None:
+                    end = re.search(self._end_marker, self.text[start.start():], re.MULTILINE)
+                else:
+                    end = None
+                if not start is None and not end is None:
+                    value = re.findall(whois_regex, self.text[start.start():start.start() + end.end()])
+            if value is None:
+                value = re.findall(whois_regex, self.text)
+            setattr(self, attr, value)
             return getattr(self, attr)
         else:
             raise KeyError('Unknown attribute: %s' % attr)
@@ -116,11 +129,14 @@ class WhoisEntry(object):
 class WhoisCom(WhoisEntry):
     """Whois parser for .com domains
     """
+    start_marker = 'Domain Name:'
+    end_marker = '^$'
+
     def __init__(self, domain, text):
         if 'No match for "' in text:
             raise PywhoisError(text)
         else:
-            WhoisEntry.__init__(self, domain, text) 
+            WhoisEntry.__init__(self, domain, text, None, self.start_marker, self.end_marker)
 
 class WhoisNet(WhoisEntry):
     """Whois parser for .net domains

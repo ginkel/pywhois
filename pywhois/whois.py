@@ -54,6 +54,7 @@ class NICClient(object) :
     NORIDHOST           = "whois.norid.no"
     IANAHOST            = "whois.iana.org"
     DENICHOST           = "de.whois-servers.net"
+    COMHOST             = "com.whois-servers.net"
     DEFAULT_PORT        = "nicname"
     WHOIS_SERVER_ID     = "Whois Server:"
     WHOIS_ORG_SERVER_ID = "Registrant Street1:Whois Server:"
@@ -101,6 +102,8 @@ class NICClient(object) :
         s.connect((hostname, 43))
         if (hostname == NICClient.DENICHOST):
             s.send("-T dn,ace -C UTF-8 " + query + "\r\n")
+        elif (hostname == NICClient.COMHOST):
+            s.send("=" + query + "\r\n")
         else:
             s.send(query + "\r\n")
         response = ''
