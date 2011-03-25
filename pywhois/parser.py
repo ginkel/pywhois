@@ -370,8 +370,9 @@ class WhoisDe(WhoisEntry):
     """Whois parser for .de domains
     """
     regex = {
-        'domain_name':                    'Domain:\s*(.+)',                                              
-        'status':                         'Status:\s*(.+)',                                              
+        'domain_name':  'Domain:\s*(.+)',
+        'status':       'Status:\s*(.+)',
+        'name_servers': 'Nserver:\s*(.+)',
         }
     def __init__(self, domain, text):
         if 'Status: free' in text:
