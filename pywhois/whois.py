@@ -53,7 +53,7 @@ class NICClient(object) :
     BNICHOST            = "whois.registro.br"
     NORIDHOST           = "whois.norid.no"
     IANAHOST            = "whois.iana.org"
-    GERMNICHOST         = "de.whois-servers.net"
+    DENICHOST           = "de.whois-servers.net"
     DEFAULT_PORT        = "nicname"
     WHOIS_SERVER_ID     = "Whois Server:"
     WHOIS_ORG_SERVER_ID = "Registrant Street1:Whois Server:"
@@ -99,8 +99,8 @@ class NICClient(object) :
         #pdb.set_trace()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((hostname, 43))
-        if (hostname == NICClient.GERMNICHOST):
-            s.send("-T dn,ace -C US-ASCII " + query + "\r\n")
+        if (hostname == NICClient.DENICHOST):
+            s.send("-T dn,ace -C UTF-8 " + query + "\r\n")
         else:
             s.send(query + "\r\n")
         response = ''
